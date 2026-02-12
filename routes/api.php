@@ -14,8 +14,7 @@ use Illuminate\Http\Request;
 | API Routes
 |--------------------------------------------------------------------------
 */
-    Route::get('/clientes', [VentaController::class, 'indexClientes']);
-    Route::get('/formas-pago', [VentaController::class, 'indexFormasPago']);
+
 // --- RUTAS PÚBLICAS (GUEST) ---
 Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('register');
@@ -47,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/productos', [VentaController::class, 'index']);
         Route::get('/productos/{id}', [VentaController::class, 'show']);
         Route::post('/ventas', [VentaController::class, 'store']);
+        Route::get('/clientes', [VentaController::class, 'indexClientes']);
+        Route::get('/formas-pago', [VentaController::class, 'indexFormasPago']);
     });
 
     /*
