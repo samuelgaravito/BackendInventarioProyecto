@@ -39,4 +39,18 @@ class VentaController extends Controller
         $resultado = $this->ventaService->crearVentaCompleta($request->all());
         return response()->json($resultado, $resultado['status']);
     }
+
+        // Listar todos los clientes
+    public function indexClientes()
+    {
+        $clientes = \App\Models\Cliente::all();
+        return response()->json($clientes);
+    }
+    
+    // Listar todos los métodos de pago
+    public function indexFormasPago()
+    {
+        $formasPago = \App\Models\FormaPago::all();
+        return response()->json($formasPago);
+    }
 }
