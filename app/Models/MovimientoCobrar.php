@@ -9,14 +9,16 @@ class MovimientoCobrar extends Model
 {
     protected $table = 'movimientos_cobrar';
 
-    protected $fillable = [
-        'id_cuentas_cobrar',
-        'fecha',
-        'monto_deuda',
-        'monto_abono',
-        'saldo',
-        'estatus'
-    ];
+ protected $fillable = [
+    'id_cuentas_cobrar', // Verifica que en la DB sea plural
+    'fecha',
+    'monto_deuda',
+    'monto_abono',
+    'saldo',
+    'estatus',
+    'metodo_pago', // Agrégalo
+    'observacion'  // Agrégalo
+];
 
     // Relación: El abono pertenece a una cuenta por cobrar específica (Nivel 4)
     public function cuentaCobrar(): BelongsTo

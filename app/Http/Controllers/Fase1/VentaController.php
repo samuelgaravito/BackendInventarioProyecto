@@ -3,54 +3,135 @@
 namespace App\Http\Controllers\Fase1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Venta;
+use App\Models\Producto;
+use App\Models\Cliente;
+use App\Models\FormaPago;
+use App\Models\MovimientoInventario;
+use App\Models\CuentaCobrar;
+use App\Models\MovimientoCobrar;
 use App\Services\Fase1_InventarioYVentas\VentaService;
-use App\Services\Fase1_InventarioYVentas\ProductoService;
+use App\Services\Fase1_InventarioYVentas\CreditoService;
+use App\Services\Fase1_InventarioYVentas\CobranzaService; // Nuevo Servicio
 use Illuminate\Http\Request;
-use Exception;
 
 class VentaController extends Controller
 {
     protected $ventaService;
-    protected $productoService;
+    protected $creditoService;
+    protected $cobranzaService;
 
-    public function __construct(VentaService $ventaService, ProductoService $productoService)
-    {
+    /**
+     * Inyección de dependencias de los 3 microservicios.
+     */
+    public function __construct(
+        VentaService $ventaService, 
+        CreditoService $creditoService,
+        CobranzaService $cobranzaService
+    ) {
         $this->ventaService = $ventaService;
-        $this->productoService = $productoService;
+        $this->creditoService = $creditoService;
+        $this->cobranzaService = $cobranzaService;
     }
 
-    // --- AGREGA ESTE MÉTODO PARA REPARAR EL ERROR DE POSTMAN ---
+    // --- GESTIÓN DE PRODUCTOS (ADMIN) ---
+
     public function index()
     {
-        $res = $this->productoService->obtenerTodos();
-        return response()->json($res, $res['status']);
+        return response()->json(Producto::all());
     }
 
-    // --- AGREGA ESTE MÉTODO PARA PODER CREAR PRODUCTOS ---
     public function storeProducto(Request $request)
     {
-        $res = $this->productoService->crearProducto($request->all());
-        return response()->json($res, $res['status']);
+        $validated = $request->validate([
+            'referencia' => 'required|unique:productos',
+            'descripcion' => 'required',
+            'costo_unitario' => 'required|numeric',
+            'precio_venta' => 'required|numeric',
+            'existencia' => 'required|integer',
+        ]);
+
+        $producto = Producto::create($validated);
+        return response()->json($producto, 201);
     }
 
-    // Tu método de ventas que ya tenías
+    public function update(Request $request, $id)
+    {
+        $producto = Producto::findOrFail($id);
+        $producto->update($request->all());
+        return response()->json(['message' => 'Producto actualizado', 'producto' => $producto]);
+    }
+
+    // --- PROCESOS DE VENTA Y CRÉDITO ---
+
+    /**
+     * Venta Normal (Contado)
+     */
     public function store(Request $request)
     {
-        $resultado = $this->ventaService->crearVentaCompleta($request->all());
+        // Recuerda que en el Service renombramos a procesarVenta
+        $resultado = $this->ventaService->procesarVenta($request->all());
+        return response()->json($resultado, $resultado['status'] ?? 200);
+    }
+
+    /**
+     * Venta a Crédito (Genera Deuda + Descuenta Stock)
+     */
+    public function crearVentaYEnviarACobrar(Request $request)
+    {
+        $resultado = $this->creditoService->registrarVentaACreditoCompleta($request->all());
         return response()->json($resultado, $resultado['status']);
     }
 
-        // Listar todos los clientes
-    public function indexClientes()
+    /**
+     * Registro de Cobros (Abonos a deudas existentes)
+     */
+    public function registrarPago(Request $request, $id)
     {
-        $clientes = \App\Models\Cliente::all();
-        return response()->json($clientes);
-    }
+        // Agregamos el ID de la URL al array de datos para que el Service lo valide
+        $data = $request->all();
+        $data['id_cuenta_cobrar'] = $id; 
     
-    // Listar todos los métodos de pago
-    public function indexFormasPago()
-    {
-        $formasPago = \App\Models\FormaPago::all();
-        return response()->json($formasPago);
+        $resultado = $this->cobranzaService->registrarCobro($data);
+        return response()->json($resultado, $resultado['status']);
     }
+
+    // --- REPORTES Y AUDITORÍA ---
+
+    public function indexVentas()
+    {
+        return response()->json(
+            Venta::with(['cliente', 'formaPago', 'detalles.producto'])->latest()->get()
+        );
+    }
+
+    public function indexCuentasPorCobrar()
+    {
+        // Solo enviamos las que aún no están pagadas (estatus false)
+        return response()->json(
+            CuentaCobrar::with(['venta.cliente', 'movimientos'])
+                ->where('estatus', false)
+                ->get()
+        );
+    }
+
+    public function indexMovimientos()
+    {
+        // Kardex de inventario
+        return response()->json(
+            MovimientoInventario::with(['producto', 'tipoMovimiento'])->latest()->get()
+        );
+    }
+
+    public function indexHistorialCobros()
+    {
+        // Historial de la tabla movimientos_cobrar
+        return response()->json(
+            MovimientoCobrar::with(['cuentaCobrar.venta.cliente'])->latest()->get()
+        );
+    }
+
+    // Listados simples para selectores en el Front
+    public function indexClientes() { return response()->json(Cliente::all()); }
+    public function indexFormasPago() { return response()->json(FormaPago::all()); }
 }

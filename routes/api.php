@@ -4,7 +4,6 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Fase1\VentaController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -15,7 +14,7 @@ use Illuminate\Http\Request;
 |--------------------------------------------------------------------------
 */
 
-// --- RUTAS PÚBLICAS (GUEST) ---
+// --- RUTAS PÚBLICAS ---
 Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('register');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login');
@@ -26,9 +25,8 @@ Route::middleware('guest')->group(function () {
 // --- RUTAS PROTEGIDAS (AUTH:SANCTUM) ---
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Perfil y Logout
+    // Perfil del usuario autenticado
     Route::get('/user', function (Request $request) {
-        // En Spatie, la relación se suele llamar 'roles'
         return $request->user()->load('roles');
     });
     
@@ -36,37 +34,39 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESO PARA VENDEDORES Y ADMINS
+    | ACCESO PARA VENDEDORES Y ADMINS (Gestión Operativa)
     |--------------------------------------------------------------------------
-    | Se utiliza el middleware 'role' de Spatie. 
-    | Nota: Si usas Laravel 11, asegúrate de haber registrado el alias en bootstrap/app.php
     */
     Route::middleware('role:vendedor|admin')->group(function () {
-        // Pueden ver productos y procesar ventas
+        
+        // 1. Listados Base (Selectores y Catálogos)
         Route::get('/productos', [VentaController::class, 'index']);
         Route::get('/productos/{id}', [VentaController::class, 'show']);
-        Route::post('/ventas', [VentaController::class, 'store']);
         Route::get('/clientes', [VentaController::class, 'indexClientes']);
         Route::get('/formas-pago', [VentaController::class, 'indexFormasPago']);
+
+        // 2. Procesos de Venta (Flujos de Salida)
+        Route::post('/ventas', [VentaController::class, 'store']); // Contado
+        Route::post('/ventas/credito-directo', [VentaController::class, 'crearVentaYEnviarACobrar']); // Crédito
+
+        // 3. Módulo de Cobranza (Gestión de Ingresos)
+// Cambiamos la definición para que acepte el parámetro ID
+        Route::post('/cuentas-por-cobrar/pagar/{id}', [VentaController::class, 'registrarPago']);
+        Route::get('/cuentas-por-cobrar/historial-pagos', [VentaController::class, 'indexHistorialCobros']); // Ver todos los abonos
+
+        // 4. Auditoría y Consultas
+        Route::get('/ventas-historial', [VentaController::class, 'indexVentas']);
+        Route::get('/inventario/movimientos', [VentaController::class, 'indexMovimientos']);
+        Route::get('/cuentas-por-cobrar', [VentaController::class, 'indexCuentasPorCobrar']); // Pendientes
     });
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESO EXCLUSIVO ADMIN (Gestión de Stock y Configuración)
+    | ACCESO EXCLUSIVO ADMIN (Mantenimiento de Catálogo)
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin')->group(function () {
-        // Solo el admin crea o edita la mercancía
         Route::post('/productos', [VentaController::class, 'storeProducto']);
         Route::put('/productos/{id}', [VentaController::class, 'update']);
-        
-        Route::get('/admin/stats', function () {
-            return response()->json(['message' => 'Panel de control administrativo']);
-        });
     });
-
-    // Verificación de Email
-    Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
 });

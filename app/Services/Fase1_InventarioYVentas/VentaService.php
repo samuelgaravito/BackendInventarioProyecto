@@ -18,7 +18,7 @@ class VentaService
         $this->productoService = $productoService;
     }
 
-    public function crearVentaCompleta(array $requestData)
+    public function procesarVenta(array $requestData)
     {
         // 1. Validaciones de estructura (Cambiamos id_cliente por datos del cliente)
         $validator = Validator::make($requestData, [
