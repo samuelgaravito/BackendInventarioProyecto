@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Fase1\VentaController;
+use App\Http\Controllers\Fase2\CompraController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -50,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/ventas/credito-directo', [VentaController::class, 'crearVentaYEnviarACobrar']); // Crédito
 
         // 3. Módulo de Cobranza (Gestión de Ingresos)
-// Cambiamos la definición para que acepte el parámetro ID
+        // Cambiamos la definición para que acepte el parámetro ID
         Route::post('/cuentas-por-cobrar/pagar/{id}', [VentaController::class, 'registrarPago']);
         Route::get('/cuentas-por-cobrar/historial-pagos', [VentaController::class, 'indexHistorialCobros']); // Ver todos los abonos
 
@@ -68,5 +69,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::post('/productos', [VentaController::class, 'storeProducto']);
         Route::put('/productos/{id}', [VentaController::class, 'update']);
-    });
+        // Rutas de Acreedores (Fase 2)
+        // Acreedores
+        Route::get('/acreedores', [CompraController::class, 'indexAcreedores']);
+        Route::post('/acreedores', [CompraController::class, 'storeAcreedor']);
+
+        // Compras
+        Route::post('/compras', [CompraController::class, 'store']); // Contado
+        Route::post('/compras-credito', [CompraController::class, 'crearCompraYEnviarAPagar']); // Crédito
+
+        // Cuentas por Pagar
+        Route::get('/cuentas-pagar', [CompraController::class, 'indexCuentasPagar']);
+       
+        // abono de pagos acreedores
+       Route::post('/cuentas-pagar/{id}/abono', [CompraController::class, 'registrarAbonoProveedor']);
+       
+        });
 });
