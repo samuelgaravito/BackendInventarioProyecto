@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Fase1\VentaController;
 use App\Http\Controllers\Fase2\CompraController;
+use App\Http\Controllers\Fase3\NominaController; // <--- Importamos el nuevo controlador
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -47,42 +48,49 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/formas-pago', [VentaController::class, 'indexFormasPago']);
 
         // 2. Procesos de Venta (Flujos de Salida)
-        Route::post('/ventas', [VentaController::class, 'store']); // Contado
-        Route::post('/ventas/credito-directo', [VentaController::class, 'crearVentaYEnviarACobrar']); // Crédito
+        Route::post('/ventas', [VentaController::class, 'store']); 
+        Route::post('/ventas/credito-directo', [VentaController::class, 'crearVentaYEnviarACobrar']); 
 
         // 3. Módulo de Cobranza (Gestión de Ingresos)
-        // Cambiamos la definición para que acepte el parámetro ID
         Route::post('/cuentas-por-cobrar/pagar/{id}', [VentaController::class, 'registrarPago']);
-        Route::get('/cuentas-por-cobrar/historial-pagos', [VentaController::class, 'indexHistorialCobros']); // Ver todos los abonos
+        Route::get('/cuentas-por-cobrar/historial-pagos', [VentaController::class, 'indexHistorialCobros']); 
 
         // 4. Auditoría y Consultas
         Route::get('/ventas-historial', [VentaController::class, 'indexVentas']);
         Route::get('/inventario/movimientos', [VentaController::class, 'indexMovimientos']);
-        Route::get('/cuentas-por-cobrar', [VentaController::class, 'indexCuentasPorCobrar']); // Pendientes
+        Route::get('/cuentas-por-cobrar', [VentaController::class, 'indexCuentasPorCobrar']); 
     });
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESO EXCLUSIVO ADMIN (Mantenimiento de Catálogo)
+    | ACCESO EXCLUSIVO ADMIN (Fase 2 y Fase 3)
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin')->group(function () {
+        
+        // --- MANTENIMIENTO PRODUCTOS ---
         Route::post('/productos', [VentaController::class, 'storeProducto']);
         Route::put('/productos/{id}', [VentaController::class, 'update']);
-        // Rutas de Acreedores (Fase 2)
-        // Acreedores
+
+        // --- FASE 2: COMPRAS Y ACREEDORES ---
         Route::get('/acreedores', [CompraController::class, 'indexAcreedores']);
         Route::post('/acreedores', [CompraController::class, 'storeAcreedor']);
-
-        // Compras
-        Route::post('/compras', [CompraController::class, 'store']); // Contado
-        Route::post('/compras-credito', [CompraController::class, 'crearCompraYEnviarAPagar']); // Crédito
-
-        // Cuentas por Pagar
+        Route::post('/compras', [CompraController::class, 'store']); 
+        Route::post('/compras-credito', [CompraController::class, 'crearCompraYEnviarAPagar']); 
         Route::get('/cuentas-pagar', [CompraController::class, 'indexCuentasPagar']);
-       
-        // abono de pagos acreedores
-       Route::post('/cuentas-pagar/{id}/abono', [CompraController::class, 'registrarAbonoProveedor']);
-       
-        });
+        Route::post('/cuentas-pagar/{id}/abono', [CompraController::class, 'registrarAbonoProveedor']);
+
+        // --- FASE 3: RRHH Y NÓMINA (NUEVAS RUTAS) ---
+        // Gestión de Cargos
+        Route::get('/cargos', [NominaController::class, 'indexCargos']);
+        Route::post('/cargos', [NominaController::class, 'storeCargo']);
+
+        // Gestión de Empleados
+        Route::get('/empleados', [NominaController::class, 'indexEmpleados']);
+        Route::post('/empleados', [NominaController::class, 'storeEmpleado']);
+
+        // Gestión de Nómina (Próximamente)
+        // Route::get('/nominas', [NominaController::class, 'indexNominas']);
+        // Route::post('/nominas/generar', [NominaController::class, 'generarNomina']);
+    });
 });
