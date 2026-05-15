@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Nomina extends Model
 {
-    protected $table = 'nomina'; // [cite: 35]
+    // AGREGA ESTA LÍNEA PARA CORREGIR EL ERROR
+    protected $table = 'nominas'; 
 
     protected $fillable = [
         'id_empleado',
         'dias_trabajados',
+        'fecha',
         'ivss',
         'faov',
         'paro_forzoso',
@@ -19,12 +21,11 @@ class Nomina extends Model
         'cesta_ticket_dia',
         'cesta_ticket_recibir',
         'salario_quincenal',
-        'salario_mensual',
-        'fecha'
-    ]; // [cite: 69, 79, 144, 145]
+        'salario_mensual'
+    ];
 
     public function empleado(): BelongsTo
     {
-        return $this->belongsTo(Empleado::class, 'id_empleado'); // [cite: 69]
+        return $this->belongsTo(Empleado::class, 'id_empleado');
     }
 }

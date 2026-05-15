@@ -84,13 +84,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // Gestión de Cargos
         Route::get('/cargos', [NominaController::class, 'indexCargos']);
         Route::post('/cargos', [NominaController::class, 'storeCargo']);
+        Route::put('/cargos/{id}', [NominaController::class, 'updateCargo']);
 
         // Gestión de Empleados
         Route::get('/empleados', [NominaController::class, 'indexEmpleados']);
         Route::post('/empleados', [NominaController::class, 'storeEmpleado']);
+        Route::put('/empleados/{id}', [NominaController::class, 'updateEmpleado']);
 
-        // Gestión de Nómina (Próximamente)
-        // Route::get('/nominas', [NominaController::class, 'indexNominas']);
-        // Route::post('/nominas/generar', [NominaController::class, 'generarNomina']);
+        // Gestión de Nómina 
+        Route::get('/nominas', [NominaController::class, 'indexNominas']);
+        Route::post('/nominas', [NominaController::class, 'storeNomina']);
+        Route::put('/nominas/{id}', [NominaController::class, 'updateNomina']);
     });
 });
