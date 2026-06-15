@@ -7,6 +7,7 @@ use App\Models\DetalleVenta;
 use App\Models\MovimientoInventario;
 use App\Models\CuentaCobrar;
 use App\Models\Cliente;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -20,7 +21,7 @@ class CreditoService
         $this->productoService = $productoService;
     }
 
-public function registrarVentaACreditoCompleta(array $data)
+    public function registrarVentaACreditoCompleta(array $data)
     {
         // 1. Validaciones (Estructura idéntica a venta normal + campos de crédito)
         $validator = Validator::make($data, [
@@ -97,6 +98,9 @@ public function registrarVentaACreditoCompleta(array $data)
                     'monto'             => $totalVenta,
                     'estatus'           => false, // pendiente
                 ]);
+
+                // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+                AuditoriaService::registrar("Registró una venta a crédito ({$venta->num_venta}) para el cliente {$cliente->nombre} (Cédula: {$cliente->cedula}) por un monto total de {$totalVenta}");
 
                 return [
                     'status' => 201,

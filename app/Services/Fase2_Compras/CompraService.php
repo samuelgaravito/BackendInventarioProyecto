@@ -6,6 +6,7 @@ use App\Models\Compra;
 use App\Models\Producto;
 use App\Models\MovimientoInventario;
 use App\Models\DetalleCompra;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -61,6 +62,9 @@ class CompraService
                         'fecha'              => now(),
                     ]);
                 }
+
+                // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+                AuditoriaService::registrar("Registró una compra de contado ({$compra->num_compra}) al proveedor/acreedor ID {$data['id_acreedor']} por un monto total de {$total}");
 
                 return [
                     'status' => 201,

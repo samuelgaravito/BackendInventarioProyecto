@@ -4,6 +4,7 @@ namespace App\Services\Fase2_Compras;
 
 use App\Models\CuentaPagar;
 use App\Models\MovimientoPagar;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -52,6 +53,10 @@ class PagosService
             }
             
             $cuenta->save();
+
+            // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+            $estadoPago = $cuenta->estatus ? 'Liquidada por completo' : 'Parcial';
+            AuditoriaService::registrar("Registró un abono/pago de {$data['monto_abono']} a la cuenta por pagar ID: {$cuenta->id}. Saldo restante: {$cuenta->deuda_actual} (Estado de deuda: {$estadoPago})");
 
             return [
                 'status' => 201,

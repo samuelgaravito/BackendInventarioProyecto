@@ -3,6 +3,7 @@
 namespace App\Services\Fase2_Compras;
 
 use App\Models\CuentaPagar;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 
 class CreditoCompraService
@@ -35,6 +36,9 @@ class CreditoCompraService
                 'estatus'      => false, // Pendiente
                 'fecha'        => now(),
             ]);
+
+            // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+            AuditoriaService::registrar("Registró una compra a crédito ({$compra->num_compra}) al proveedor ID {$compra->id_acreedor} generando una cuenta por pagar de {$compra->monto_total}");
 
             return [
                 'status' => 201,

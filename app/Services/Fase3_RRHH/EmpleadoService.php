@@ -3,6 +3,7 @@
 namespace App\Services\Fase3_RRHH;
 
 use App\Models\Empleado;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\Validator;
 
 class EmpleadoService
@@ -19,6 +20,10 @@ class EmpleadoService
         if ($validator->fails()) return ['status' => 400, 'errors' => $validator->errors()];
 
         $empleado = Empleado::create($data);
+
+        // <-- REGISTRAMOS LA CREACIÓN EN LA AUDITORÍA
+        AuditoriaService::registrar("Registró al empleado: {$empleado->nombre} {$empleado->apellido} (Cédula: {$empleado->cedula})");
+
         return ['status' => 201, 'message' => 'Empleado registrado', 'data' => $empleado->load('cargo')];
     }
 
@@ -40,6 +45,9 @@ class EmpleadoService
 
         $empleado = Empleado::findOrFail($id);
         $empleado->update($data);
+
+        // <-- REGISTRAMOS LA MODIFICACIÓN EN LA AUDITORÍA
+        AuditoriaService::registrar("Modificó los datos del empleado ID {$id}: {$empleado->nombre} {$empleado->apellido} (Cédula actual: {$empleado->cedula})");
 
         return [
             'status' => 200,

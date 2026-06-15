@@ -3,6 +3,7 @@
 namespace App\Services\Fase1_InventarioYVentas;
 
 use App\Models\Producto;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\Validator;
 
 class ProductoService
@@ -54,6 +55,9 @@ class ProductoService
         
         $producto = Producto::create($data);
 
+        // <-- REGISTRAMOS LA CREACIÓN EN LA AUDITORÍA
+        AuditoriaService::registrar("Creó un nuevo producto: '{$producto->descripcion}' (Ref: {$producto->referencia}) con existencia inicial de {$producto->existencia}");
+
         return [
             'status' => 201,
             'message' => 'Producto creado exitosamente',
@@ -83,9 +87,12 @@ class ProductoService
 
         $producto->update($data);
 
+        // <-- REGISTRAMOS LA ACTUALIZACIÓN EN LA AUDITORÍA
+        AuditoriaService::registrar("Actualizó datos del producto ID {$id}: '{$producto->descripcion}' (Ref: {$producto->referencia})");
+
         return [
             'status' => 200,
-            'message' => 'Producto actualizado correctamente',
+            'message' => 'Producto updated correctamente',
             'data' => $producto
         ];
     }
@@ -108,6 +115,9 @@ class ProductoService
 
         $producto->existencia -= $cantidad;
         $producto->save();
+
+        // <-- REGISTRAMOS EL DESCUENTO AUTOMÁTICO EN LA AUDITORÍA
+        AuditoriaService::registrar("Descontó {$cantidad} unidades del stock del producto ID {$productoId} ('{$producto->descripcion}') por concepto de venta. Stock remanente: {$producto->existencia}");
 
         return ['status' => 200, 'producto' => $producto];
     }

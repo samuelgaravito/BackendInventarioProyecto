@@ -4,6 +4,7 @@ namespace App\Services\Fase3_RRHH;
 
 use App\Models\Nomina;
 use App\Models\Empleado;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -66,6 +67,9 @@ class NominaService
                 'salario_mensual'      => $sueldo_ganado,
             ]);
 
+            // <-- REGISTRAMOS LA CREACIÓN EN LA AUDITORÍA
+            AuditoriaService::registrar("Generó la nómina del empleado ID {$empleado->id} ({$empleado->nombre} {$empleado->apellido}) para el mes actual por {$dias} días trabajados");
+
             return [
                 'status' => 201,
                 'message' => 'Nómina generada con éxito',
@@ -119,6 +123,9 @@ class NominaService
                 'salario_quincenal'    => $salario_quincenal,
                 'salario_mensual'      => $sueldo_ganado,
             ]);
+
+            // <-- REGISTRAMOS LA MODIFICACIÓN EN LA AUDITORÍA
+            AuditoriaService::registrar("Modificó y recalculó la nómina ID {$id} correspondiente al empleado ID {$empleado->id}. Nuevos días trabajados: {$dias}");
 
             return [
                 'status' => 200,

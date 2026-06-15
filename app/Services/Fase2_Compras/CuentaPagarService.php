@@ -3,6 +3,7 @@
 namespace App\Services\Fase2_Compras;
 
 use App\Models\CuentaPagar;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO PARA MANTENER LA ARQUITECTURA
 use Exception;
 
 class CuentaPagarService

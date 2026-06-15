@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Fase3;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use App\Models\Auditoria; // <-- ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AQUÍ
 // Inyección de los 3 servicios de la Fase 3
 use App\Services\Fase3_RRHH\CargoService;
 use App\Services\Fase3_RRHH\EmpleadoService;
@@ -95,4 +95,11 @@ class NominaController extends Controller
         $res = $this->nominaService->editarNomina($id, $request->all());
         return response()->json($res, $res['status']);
     }
+
+    public function indexAuditoria()
+{
+    // Retorna el historial con el usuario que hizo la acción, ordenado por lo más reciente
+    $auditorias = Auditoria::with('usuario')->latest()->get();
+    return response()->json($auditorias, 200);
+}
 }

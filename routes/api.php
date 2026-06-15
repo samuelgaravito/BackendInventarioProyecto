@@ -6,7 +6,8 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Fase1\VentaController;
 use App\Http\Controllers\Fase2\CompraController;
-use App\Http\Controllers\Fase3\NominaController; // <--- Importamos el nuevo controlador
+use App\Http\Controllers\Fase3\NominaController;
+use App\Models\Auditoria;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -67,7 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin')->group(function () {
-        
+        // --- AUDITORIA ---
+        Route::get('/auditoria', [NominaController::class, 'indexAuditoria']);
         // --- MANTENIMIENTO PRODUCTOS ---
         Route::post('/productos', [VentaController::class, 'storeProducto']);
         Route::put('/productos/{id}', [VentaController::class, 'update']);

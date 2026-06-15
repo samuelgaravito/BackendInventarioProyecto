@@ -4,6 +4,7 @@ namespace App\Services\Fase1_InventarioYVentas;
 
 use App\Models\CuentaCobrar;
 use App\Models\MovimientoCobrar; 
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -42,6 +43,10 @@ class CobranzaService
             if ($nuevoSaldo <= 0) {
                 $cuenta->update(['estatus' => true]); 
             }
+
+            // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+            $saldoFormateado = max(0, $nuevoSaldo);
+            AuditoriaService::registrar("Registró un cobro/abono de {$data['monto_pagado']} a la cuenta por cobrar ID: {$cuenta->id}. Saldo restante: {$saldoFormateado}");
 
             return [
                 'status' => 201,

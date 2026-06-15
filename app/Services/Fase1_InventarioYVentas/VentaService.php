@@ -6,6 +6,7 @@ use App\Models\Venta;
 use App\Models\DetalleVenta;
 use App\Models\MovimientoInventario;
 use App\Models\Cliente; // Importamos el modelo Cliente
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -93,6 +94,9 @@ class VentaService
                         'fecha' => now(),
                     ]);
                 }
+
+                // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+                AuditoriaService::registrar("Registró una venta de contado ({$venta->num_venta}) para el cliente {$cliente->nombre} (Cédula: {$cliente->cedula}) por un monto total de {$totalVenta}");
 
                 return [
                     'status' => 201,

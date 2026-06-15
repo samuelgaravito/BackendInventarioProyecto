@@ -12,7 +12,8 @@ use App\Models\CuentaCobrar;
 use App\Models\MovimientoCobrar;
 use App\Services\Fase1_InventarioYVentas\VentaService;
 use App\Services\Fase1_InventarioYVentas\CreditoService;
-use App\Services\Fase1_InventarioYVentas\CobranzaService; // Nuevo Servicio
+use App\Services\Fase1_InventarioYVentas\CobranzaService;
+use App\Services\Fase1_InventarioYVentas\ProductoService; // <-- IMPORTAMOS EL SERVICIO DE PRODUCTOS
 use Illuminate\Http\Request;
 
 class VentaController extends Controller
@@ -20,46 +21,44 @@ class VentaController extends Controller
     protected $ventaService;
     protected $creditoService;
     protected $cobranzaService;
+    protected $productoService; // <-- PROPIEDAD PARA EL SERVICIO DE PRODUCTOS
 
     /**
-     * Inyección de dependencias de los 3 microservicios.
+     * Inyección de dependencias de los microservicios.
      */
     public function __construct(
         VentaService $ventaService, 
         CreditoService $creditoService,
-        CobranzaService $cobranzaService
+        CobranzaService $cobranzaService,
+        ProductoService $productoService // <-- INYECTAMOS EL SERVICIO DE PRODUCTOS
     ) {
         $this->ventaService = $ventaService;
         $this->creditoService = $creditoService;
         $this->cobranzaService = $cobranzaService;
+        $this->productoService = $productoService;
     }
 
     // --- GESTIÓN DE PRODUCTOS (ADMIN) ---
 
     public function index()
     {
-        return response()->json(Producto::all());
+        // Usamos el método del servicio para mantener consistencia
+        $resultado = $this->productoService->obtenerTodos();
+        return response()->json($resultado['data'], $resultado['status']);
     }
 
     public function storeProducto(Request $request)
     {
-        $validated = $request->validate([
-            'referencia' => 'required|unique:productos',
-            'descripcion' => 'required',
-            'costo_unitario' => 'required|numeric',
-            'precio_venta' => 'required|numeric',
-            'existencia' => 'required|integer',
-        ]);
-
-        $producto = Producto::create($validated);
-        return response()->json($producto, 201);
+        // 🚀 LLAMAMOS AL SERVICIO: Aquí se valida, calcula el saldo y registra la AUDITORÍA
+        $resultado = $this->productoService->crearProducto($request->all());
+        return response()->json($resultado, $resultado['status']);
     }
 
     public function update(Request $request, $id)
     {
-        $producto = Producto::findOrFail($id);
-        $producto->update($request->all());
-        return response()->json(['message' => 'Producto actualizado', 'producto' => $producto]);
+        // 🚀 LLAMAMOS AL SERVICIO: Actualiza los datos y registra el cambio en la AUDITORÍA
+        $resultado = $this->productoService->actualizarProducto($id, $request->all());
+        return response()->json($resultado, $resultado['status']);
     }
 
     // --- PROCESOS DE VENTA Y CRÉDITO ---
@@ -69,7 +68,6 @@ class VentaController extends Controller
      */
     public function store(Request $request)
     {
-        // Recuerda que en el Service renombramos a procesarVenta
         $resultado = $this->ventaService->procesarVenta($request->all());
         return response()->json($resultado, $resultado['status'] ?? 200);
     }
@@ -88,7 +86,6 @@ class VentaController extends Controller
      */
     public function registrarPago(Request $request, $id)
     {
-        // Agregamos el ID de la URL al array de datos para que el Service lo valide
         $data = $request->all();
         $data['id_cuenta_cobrar'] = $id; 
     
@@ -107,7 +104,6 @@ class VentaController extends Controller
 
     public function indexCuentasPorCobrar()
     {
-        // Solo enviamos las que aún no están pagadas (estatus false)
         return response()->json(
             CuentaCobrar::with(['venta.cliente', 'movimientos'])
                 ->where('estatus', false)
@@ -117,7 +113,6 @@ class VentaController extends Controller
 
     public function indexMovimientos()
     {
-        // Kardex de inventario
         return response()->json(
             MovimientoInventario::with(['producto', 'tipoMovimiento'])->latest()->get()
         );
@@ -125,13 +120,11 @@ class VentaController extends Controller
 
     public function indexHistorialCobros()
     {
-        // Historial de la tabla movimientos_cobrar
         return response()->json(
             MovimientoCobrar::with(['cuentaCobrar.venta.cliente'])->latest()->get()
         );
     }
 
-    // Listados simples para selectores en el Front
     public function indexClientes() { return response()->json(Cliente::all()); }
     public function indexFormasPago() { return response()->json(FormaPago::all()); }
 }

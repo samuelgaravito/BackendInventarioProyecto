@@ -3,6 +3,7 @@
 namespace App\Services\Fase2_Compras;
 
 use App\Models\Acreedor;
+use App\Services\AuditoriaService; // <-- IMPORTAMOS EL SERVICIO DE AUDITORÍA
 use Illuminate\Support\Facades\Validator;
 
 class AcreedorService
@@ -20,6 +21,9 @@ class AcreedorService
 
         $acreedor = Acreedor::create($data);
 
+        // <-- REGISTRAMOS LA ACCIÓN EN LA AUDITORÍA
+        AuditoriaService::registrar("Registró un nuevo acreedor/proveedor: '{$acreedor->nombre}' (RIF: {$acreedor->rif})");
+
         return [
             'status' => 201,
             'message' => 'Acreedor registrado con éxito',
@@ -28,10 +32,10 @@ class AcreedorService
     }
 
     public function listarAcreedores()
-{
-    return [
-        'status' => 200,
-        'data' => Acreedor::orderBy('nombre', 'asc')->get()
-    ];
-}
+    {
+        return [
+            'status' => 200,
+            'data' => Acreedor::orderBy('nombre', 'asc')->get()
+        ];
+    }
 }
